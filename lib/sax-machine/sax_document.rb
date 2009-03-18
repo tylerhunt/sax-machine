@@ -23,11 +23,14 @@ module SAXMachine
       options[:as] ||= name
       sax_config.add_top_level_element(name, options)
       
-      # we only want to insert the getter and setter if they haven't defined it from elsewhere.
-      # this is how we allow custom parsing behavior. So you could define the setter
-      # and have it parse the string into a date or whatever.
-      attr_reader options[:as] unless instance_methods.include?(options[:as].to_s)
-      attr_writer options[:as] unless instance_methods.include?("#{options[:as]}=")
+      # We only want to insert the getter and setter if they haven't been
+      # defined elsewhere. This is how we allow custom parsing behavior. So you
+      # could define the setter and have it parse the string into a date or
+      # whatever. However, if the getter or setter is defined by a superclass,
+      # we go ahead and overwrite it. This allows use to still access elements
+      # with names like "id".
+      attr_reader options[:as] unless instance_methods(false).include?(options[:as].to_s)
+      attr_writer options[:as] unless instance_methods(false).include?("#{options[:as]}=")
     end
     
     def elements(name, options = {})
