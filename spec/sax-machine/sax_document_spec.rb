@@ -260,6 +260,43 @@ describe "SAXMachine" do
         end
       end
     end
+
+    describe "when using the class option" do
+      before :each do
+        class Foo
+          include SAXMachine
+          element :title
+        end
+        @klass = Class.new do
+          include SAXMachine
+          element :entry, :class => Foo
+        end
+      end
+
+      it "should parse a single element with children" do
+        document = @klass.parse("<entry><title>a title</title></entry>")
+        document.entry.title.should == "a title"
+      end
+
+      it "should use the first element when there are multiple of the same element" do
+        document = @klass.parse("<xml><entry><title>title 1</title></entry><entry><title>title 2</title></entry></xml>")
+        document.entry.title.should == "title 1"
+      end
+
+      it "should not parse a top level element that is specified only in a child" do
+        document = @klass.parse("<xml><title>no parse</title><entry><title>correct title</title></entry></xml>")
+        document.entry.title.should == "correct title"
+      end
+
+      it "should parse out an attribute value from the tag that starts the element" do
+        class Foo
+          element :entry, :value => :href, :as => :url
+        end
+        document = @klass.parse("<xml><entry href='http://pauldix.net'><title>paul</title></entry></xml>")
+        document.entry.title.should == "paul"
+        document.entry.url.should == "http://pauldix.net"
+      end
+    end
   end
 
   describe "elements" do
@@ -290,6 +327,7 @@ describe "SAXMachine" do
 
     describe "when using the class option" do
       before :each do
+        Object.send(:remove_const, :Foo)
         class Foo
           include SAXMachine
           element :title
